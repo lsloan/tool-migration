@@ -44,11 +44,21 @@ class AccountManager(AccountManagerBase):
         return result.data['name']
 
     async def get_term_names(self, term_ids: list[int]) -> Dict[int, str]:
-        results = await self.api.get(f'/accounts/1/terms')
-        term_names = {
-            result['id']: result['name']
-            for result in results.data['enrollment_terms']
-            if result['id'] in term_ids}
+        # FIXME: In addition to replacing custom API code with `canvasapi`,
+        #        this single, paged API call should be replaced with
+        #        small single API calls for each term ID.
+        #        Use the `/v1/accounts/{account_id}/terms/{id}` endpoint.
+        term_names = {}
+        for term_id in term_ids:
+            result = await self.api.get(f'/accounts/1/terms/{term_id}')
+            if result.status_code != 200:
+                continue
+            term_names[term_id] = result.data['name']
+        # results = await self.api.get(f'/accounts/1/terms')
+        # term_names = {
+        #     result['id']: result['name']
+        #     for result in results.data['enrollment_terms']
+        #     if result['id'] in term_ids}
         return term_names
 
     async def get_tools_installed_in_account(self) -> list[ExternalTool]:
